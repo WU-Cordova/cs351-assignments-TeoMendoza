@@ -1,12 +1,12 @@
-from collections import deque
 from __future__ import annotations
+from collections import deque
 from datastructures.iavltree import IAVLTree, K, V
 from typing import Callable, Generic, List, Optional, Sequence, Tuple
 
 
 class AVLNode(Generic[K, V]):
    def __init__(self, key: K, value: V, left: Optional[AVLNode[K, V]]=None, right: Optional[AVLNode[K, V]]=None):
-      self.key = key
+      self._key = key
       self.value = value
       self.height = 1
       self.left = left
@@ -14,10 +14,11 @@ class AVLNode(Generic[K, V]):
 
    @property
    def key (self) -> K:
-      return self.key
+      return self._key
+   
    @key.setter
    def key(self, new_key: K) -> None:
-      self.key = new_key
+      self._key = new_key
       
 
 class AVLTree(IAVLTree[K, V], Generic[K, V]):
@@ -40,26 +41,28 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
       else:
          node.right = self.insert_helper(node.right, key, value)
 
-      node.height = 1 + max(node.left.height, node.right.height)
+      node.height = 1 + max(node.left.height if node.left else 0, node.right.height if node.right else 0)
 
-      if node.left.height - node.right.height > 1:
+      if (node.left.height if node.left else 0) - (node.right.height if node.right else 0) > 1:
          left_child = node.left
          right_child = node.right
-         if left_child.left.height - left_child.right.height >= 0:
+         if (left_child.left.height if node.left else 0) - (left_child.right.height if node.right else 0) >= 0:
             return self.rotate_right(node)
          else:
             node.left = self.rotate_left(left_child)
             return self.rotate_right(node)
          
-      elif node.left.height - node.right.height < -1:
+      elif (node.left.height if node.left else 0) - (node.right.height if node.right else 0) < -1:
          left_child = node.left
          right_child = node.right
-         if right_child.left.height - right_child.right.height <= 0:
+         if (right_child.left.height if node.left else 0) - (right_child.right.height if node.right else 0) <= 0:
             return self.rotate_left(node)
          else:
             node.right = self.rotate_right(right_child)
             return self.rotate_left(node)
 
+      return node
+   
    def rotate_right(self, node: AVLNode) -> AVLNode:
       left_child = node.left
       left_subtree = left_child.right
@@ -132,7 +135,26 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
                node.value = successor.value
                node.right = self.delete_helper(node.right, successor.key)
 
-      node.height = max(node.left.height, node.right.height) - 1
+      node.height = max(node.left.height if node.left else 0, node.right.height if node.right else 0) - 1
+
+      if (node.left.height if node.left else 0) - (node.right.height if node.right else 0) > 1:
+         left_child = node.left
+         right_child = node.right
+         if (left_child.left.height if left_child.left else 0) - (left_child.right.height if left_child.right else 0) >= 0:
+            return self.rotate_right(node)
+         else:
+            node.left = self.rotate_left(left_child)
+            return self.rotate_right(node)
+         
+      elif (node.left.height if node.left else 0) - (node.right.height if node.right else 0) < -1:
+         left_child = node.left
+         right_child = node.right
+         if (right_child.left.height if right_child.left else 0) - (right_child.right.height if right_child.right else 0) <= 0:
+            return self.rotate_left(node)
+         else:
+            node.right = self.rotate_right(right_child)
+            return self.rotate_left(node)
+         
       return node 
    
    def find_min(self, node: AVLNode) -> AVLNode:
@@ -142,20 +164,20 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
    
    def inorder(self, visit: Optional[Callable[[V], None]]=None) -> List[K]:
       keys = []
-      self.inorder_helper(visit, keys)
+      self.inorder_helper(self.root, keys)
       return keys
    
    def inorder_helper(self, node: Optional[AVLNode], keys: List[K]) -> None:
       if node is None:
          return None
 
-      self.preorder_helper(node.left, keys)
+      self.inorder_helper(node.left, keys)
       keys.append(node.key)
-      self.preorder_helper(node)
+      self.inorder_helper(node.right, keys)
 
    def preorder(self, visit: Optional[Callable[[V], None]]=None) -> List[K]:
       keys = []
-      self.preorder_helper(visit, keys)
+      self.preorder_helper(self.root, keys)
       return keys
    
    def preorder_helper(self, node: Optional[AVLNode], keys: List[K]) -> None:
@@ -164,11 +186,11 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
 
       keys.append(node.key)
       self.preorder_helper(node.left, keys)
-      self.preorder_helper(node)
+      self.preorder_helper(node.right, keys)
 
    def postorder(self, visit: Optional[Callable[[V], None]]=None) -> List[K]:
       keys = []
-      self.postorder_helper(visit, keys)
+      self.postorder_helper(self.root, keys)
       return keys
 
    def postorder_helper(self, node: Optional[AVLNode], keys: List[K]) -> None:
@@ -182,7 +204,7 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
    def bforder(self, visit: Optional[Callable[[V], None]]=None) -> List[K]:
       keys = []
       dec = deque()
-      self.bforder_helper(dec, visit, keys)
+      self.bforder_helper(dec, self.root, keys)
       return keys
    
    def bforder_helper(self, dec: deque, node: Optional[AVLNode], keys: List[K]) -> None:
