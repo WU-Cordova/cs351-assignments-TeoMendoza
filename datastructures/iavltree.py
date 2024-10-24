@@ -108,7 +108,7 @@ class IAVLTree(Protocol, Generic[K, V]):
         pass
 
     @abstractmethod
-    def size(self) -> int:
+    def size_avl(self) -> int:
         """Returns the number of nodes in the binary search tree.
 
         Args:

@@ -25,7 +25,6 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
 
    def __init__(self, starting_sequence: Optional[Sequence[Tuple]] = None):
       self.root = None
-      self.size = 0
 
       for key, value in starting_sequence or []:
          self.insert(key, value)
@@ -219,7 +218,7 @@ class AVLTree(IAVLTree[K, V], Generic[K, V]):
             dec.append(current.right)
       
    
-   def size(self) -> int:
+   def size_avl(self) -> int:
       return self.size_helper(self.root)
    
    def size_helper(self, node: Optional[AVLNode]) -> int:
